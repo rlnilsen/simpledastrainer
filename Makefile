@@ -26,10 +26,15 @@ build/highscores.ips.cfg: build/highscores.o
 build/highscores.ips: build/highscores.o build/ips.o
 build/highscores.nes: build/tetris.nes
 
+build/skiprocket.o: build/tetris.inc
+build/skiprocket.ips.cfg: build/skiprocket.o
+build/skiprocket.ips: build/skiprocket.o build/ips.o
+build/skiprocket.nes: build/tetris.nes
+
 dastrainer: build/dastrainer.nes
 build/dastrainer.o: build/tetris.inc
-build/dastrainer.ips.cfg: build/dastrainer.o build/fastlegal.o
-build/dastrainer.ips: build/ips.o build/dastrainer.o build/fastlegal.o
+build/dastrainer.ips.cfg: build/dastrainer.o build/fastlegal.o build/skiprocket.o
+build/dastrainer.ips: build/ips.o build/dastrainer.o build/fastlegal.o build/skiprocket.o
 build/dastrainer.nes: build/tetris.nes
 
 playerid: build/playerid.nes
