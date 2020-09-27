@@ -1,7 +1,7 @@
-all: tetris taus screens custom handicap twoplayer playerid build/game_palette.pal build/menu_palette.pal build/game_nametable.nam build/level_menu_nametable.nam
+all: tetris taus screens custom handicap twoplayer playerid dastrainer build/game_palette.pal build/menu_palette.pal build/game_nametable.nam build/level_menu_nametable.nam
 test: build/tetris-test build/taus-test.test build/chart-test.test build/twoplayer-test.test
 # These are simply aliases
-.PHONY: all dis tetris taus screens custom handicap twoplayer playerid
+.PHONY: all dis tetris taus screens custom handicap twoplayer playerid dastrainer
 
 dis: build/tetris-PRG.s
 
@@ -25,6 +25,12 @@ build/highscores.o: build/tetris.inc
 build/highscores.ips.cfg: build/highscores.o
 build/highscores.ips: build/highscores.o build/ips.o
 build/highscores.nes: build/tetris.nes
+
+dastrainer: build/dastrainer.nes
+build/dastrainer.o: build/tetris.inc
+build/dastrainer.ips.cfg: build/dastrainer.o build/fastlegal.o
+build/dastrainer.ips: build/ips.o build/dastrainer.o build/fastlegal.o
+build/dastrainer.nes: build/tetris.nes
 
 playerid: build/playerid.nes
 build/playerid.o: build/tetris.inc
