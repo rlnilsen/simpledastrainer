@@ -41,7 +41,7 @@
         jsr     swapTetriminoType
 
 .segment "CODE"
-        ips_segment     "CODE",unreferenced_data3
+        ips_segment     "CODE",unreferenced_data1,515
 
 ; ----------------------------------------------------------------------------
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
