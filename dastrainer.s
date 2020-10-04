@@ -4,6 +4,7 @@
 ; 1. Visualizes the current DAS charge by changing the color of the background.
 ; Each possible DAS charge value is mapped to a color through a look up table in ROM.
 ; This makes it easy to customize the colors with a hex editor.
+; There are two sets of colors that can be switched between by pressing the select button.
 ;
 ; 2. Allows choosing which tetriminos to spawn.
 ; Each possible tetrimino type is mapped to any other through a look up table in ROM.
@@ -23,7 +24,12 @@
 ; replaces "stx PPUDATA"
         jsr     renderDasCharge
 
-;
+.segment "ALWAYS_DISPLAY_NEXT_PIECE"
+        ips_segment     "ALWAYS_DISPLAY_NEXT_PIECE",stageSpriteForNextPiece ; $8BCE
+
+; replaces "lda displayNextPiece"
+        lda		#0
+
 ; ----------------------------------------------------------------------------
 ; SWAP_TETRIMINO_TYPE
 ; ----------------------------------------------------------------------------
@@ -47,19 +53,46 @@
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
 ; ----------------------------------------------------------------------------
 
+dasChargeColorSubsetSize = 17
+dasChargeColorSetSize = 2 * dasChargeColorSubsetSize
 
-dasChargeColors:
-;        .byte   $06,$06,$06,$06,$06,$06,$06,$06,$06,$06, $01,$01,$01,$01,$01,$01, $0a
-;        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $12,$12,$12,$12,$12,$12, $19
-;        .byte   $26,$26,$26,$26,$26,$26,$26,$26,$26,$26, $21,$21,$21,$21,$21,$21, $2a
-        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00
+; each line contains 17 color values, one for each possible value of DAS charge (0-16)
+dasChargeColorSet1:
+        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
+        .byte   $17,$17,$17,$17,$17,$17,$17,$17,$17,$17, $1c,$1c,$1c,$1c,$1c,$1c, $19 ; subset used during entry delay
+		.assert	* - dasChargeColorSet1 = dasChargeColorSetSize, error, "Color set has wrong size"
+dasChargeColorSet2:
+        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
+        .byte   $17,$17,$17,$17,$17,$17,$17,$17,$17,$17, $00,$00,$00,$00,$00,$00, $00 ; subset used during entry delay
+		.assert	* - dasChargeColorSet2 = dasChargeColorSetSize, error, "Color set has wrong size"
 
 renderDasCharge:
-        cpx #$00        ; only replace bg color if it is gray ($00 meaning normal), not if it is white ($30 meaning a tetris flash is happening)
-        bne @skipRenderDasCharge
-        ldy     autorepeatX
-        ldx		dasChargeColors,y
-@skipRenderDasCharge:
+		; only replace bg color if it is gray ($00), not if it is white ($30 meaning a tetris flash is happening)
+        cpx     #$00
+        bne     @setColor
+		; select color set: load offset from dasChargeColorSet1 in a
+		lda		#0
+		ldy		displayNextPiece
+		beq		@checkIfInEntryDelay
+		lda 	#dasChargeColorSetSize
+@checkIfInEntryDelay:
+		; we are in entry delay if playState is 2 to 8 inclusive
+		ldy		playState
+		cpy		#2
+		bmi		@notInEntryDelay
+		cpy		#9
+		bpl		@notInEntryDelay
+		; in entry delay so switch to that color subset by adding to a
+		clc
+		adc		#dasChargeColorSubsetSize
+@notInEntryDelay:
+		; add das charge value to a
+		clc
+		adc		autorepeatX
+		; load color from selected index
+		tay
+        ldx	    dasChargeColorSet1,y
+@setColor:
         stx     PPUDATA	; replaced code
         rts
 
