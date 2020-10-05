@@ -1,0 +1,48 @@
+branchOnGameMode:
+        lda     gameMode                        ; 8161
+        jsr     switch_s_plus_2a                ; 8163
+        0   gameMode_legalScreen            ; 8166
+        1   gameMode_titleScreen            ; 8168
+        2   gameMode_gameTypeMenu           ; 816A
+        3   gameMode_levelMenu              ; 816C
+        4   gameMode_playAndEndingHighScore_jmp; 816E
+        5   gameMode_playAndEndingHighScore_jmp; 8170
+        6   gameMode_startDemo              ; 8172
+
+gameMode_playAndEndingHighScore:
+        lda     gameModeState                   ; 819B
+        jsr     switch_s_plus_2a                ; 819D
+        0   gameModeState_initGameBackground; 81A0
+        1   gameModeState_initGameState     ; 81A2
+        2   gameModeState_updateCountersAndNonPlayerState; 81A4
+        3   gameModeState_handleGameOver    ; 81A6
+        4   gameModeState_updatePlayer1     ; 81A8
+        5   gameModeState_updatePlayer2     ; 81AA
+        6   gameModeState_checkForResetKeyCombo; 81AC
+        7   gameModeState_startButtonHandling; 81AE
+        8   gameModeState_vblankThenRunState2; 81B0
+
+branchOnPlayStatePlayer1:
+        lda     playState                       ; 81B2
+        jsr     switch_s_plus_2a                ; 81B4
+        0   playState_unassignOrientationId ; 81B7
+        1   playState_playerControlsActiveTetrimino; 81B9
+        2   playState_lockTetrimino         ; 81BB
+        3   playState_checkForCompletedRows ; 81BD
+        4   playState_noop                  ; 81BF
+        5   playState_updateLinesAndStatistics; 81C1
+        6   playState_bTypeGoalCheck        ; 81C3
+        7   playState_receiveGarbage        ; 81C5
+        8   playState_spawnNextTetrimino    ; 81C7
+        9   playState_noop                  ; 81C9
+       10   playState_updateGameOverCurtain ; 81CB
+       11   playState_incrementPlayState    ; 81CD
+
+render: lda     renderMode                      ; 804B
+        jsr     switch_s_plus_2a                ; 804D
+        0   render_mode_legal_and_title_screens; 8050
+        1   render_mode_menu_screens        ; 8052
+        2   render_mode_congratulations_screen; 8054
+        3   render_mode_play_and_demo       ; 8056
+        4   render_mode_ending_animation    ; 8058
+
