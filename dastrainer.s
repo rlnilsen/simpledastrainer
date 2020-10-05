@@ -50,6 +50,20 @@
         ips_segment     "CODE",unreferenced_data1,515
 
 ; ----------------------------------------------------------------------------
+; SWAP_TETRIMINO_TYPE
+; ----------------------------------------------------------------------------
+
+swapTetriminoTypeTable:
+        .byte  0,1,2,3,4,5,6 ; original behaviour
+;        .byte  0,0,0,0,0,0,0 ; T only
+;        .byte  1,1,1,1,1,1,1 ; J only
+;        .byte  2,2,2,2,2,2,2 ; Z only
+;        .byte  3,3,3,3,3,3,3 ; O only
+;        .byte  4,4,4,4,4,4,4 ; S only
+;        .byte  5,5,5,5,5,5,5 ; L only
+;        .byte  6,6,6,6,6,6,6 ; I only
+
+; ----------------------------------------------------------------------------
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
 ; ----------------------------------------------------------------------------
 
@@ -65,6 +79,10 @@ dasChargeColorSet2:
         .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
         .byte   $17,$17,$17,$17,$17,$17,$17,$17,$17,$17, $00,$00,$00,$00,$00,$00, $00 ; subset used during entry delay
 		.assert	* - dasChargeColorSet2 = dasChargeColorSetSize, error, "Color set has wrong size"
+
+; ----------------------------------------------------------------------------
+; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
+; ----------------------------------------------------------------------------
 
 renderDasCharge:
 		; only replace bg color if it is gray ($00), not if it is white ($30 meaning a tetris flash is happening)
@@ -99,16 +117,6 @@ renderDasCharge:
 ; ----------------------------------------------------------------------------
 ; SWAP_TETRIMINO_TYPE
 ; ----------------------------------------------------------------------------
-
-swapTetriminoTypeTable:
-        .byte  0,1,2,3,4,5,6 ; original behaviour
-;        .byte  0,0,0,0,0,0,0 ; T only
-;        .byte  1,1,1,1,1,1,1 ; J only
-;        .byte  2,2,2,2,2,2,2 ; Z only
-;        .byte  3,3,3,3,3,3,3 ; O only
-;        .byte  4,4,4,4,4,4,4 ; S only
-;        .byte  5,5,5,5,5,5,5 ; L only
-;        .byte  6,6,6,6,6,6,6 ; I only
 
 swapTetriminoType:
         tax
