@@ -101,14 +101,14 @@ renderDasCharge:
 ; ----------------------------------------------------------------------------
 
 swapTetriminoTypeTable:
-;        .byte  0,1,2,3,4,5,6 ; original behaviour
+        .byte  0,1,2,3,4,5,6 ; original behaviour
 ;        .byte  0,0,0,0,0,0,0 ; T only
 ;        .byte  1,1,1,1,1,1,1 ; J only
 ;        .byte  2,2,2,2,2,2,2 ; Z only
 ;        .byte  3,3,3,3,3,3,3 ; O only
 ;        .byte  4,4,4,4,4,4,4 ; S only
 ;        .byte  5,5,5,5,5,5,5 ; L only
-        .byte  6,6,6,6,6,6,6 ; I only
+;        .byte  6,6,6,6,6,6,6 ; I only
 
 swapTetriminoType:
         tax
