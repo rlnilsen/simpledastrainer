@@ -10,7 +10,7 @@ Pressing `select` during play turns on visualization of *all* DAS charge values 
 ## How to run
 
 Pre-built IPS mod files are available in the
-[releases section of GitHub](https://github.com/rlnilsen/taus/releases). They
+[releases section of GitHub](https://github.com/rlnilsen/simpledastrainer/releases). They
 must be applied to the USA Tetris ROM:
 
 ```
@@ -54,15 +54,15 @@ On Windows, to modify your PATH, run `SystemPropertiesAdvanced.exe`. On the
 changes to take effect.
 
 Manual prep:
-1. Copy tetris ROM to `tetris.nes` in the `taus` folder. If the iNES header is
-   different than mentioned above you can still use the ROM, but you need to
-   adjust the header in `tetris.s` to match your rom to make `$ make test`
-   happy
+1. Copy tetris ROM to `tetris.nes` in the `simpledastrainer` folder. If the
+   iNES header is different than mentioned above you can still use the ROM,
+   but you need to adjust the header in `tetris.s` to match your rom to make
+   `$ make test` happy.
 
 Use `$ make` to build artifacts into `build/`, which includes disassembling
 into `build/tetris-PRG.s`. `$ make test` verifies the reassembled version
-matches the original. The mod will be generated at `build/taus.ips` and will
-have been applied to `build/taus.nes`.
+matches the original. The mod will be generated at `build/simpledastrainer.ips`
+and will have been applied to `build/simpledastrainer.nes`.
 
 ## Structure
 
