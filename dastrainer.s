@@ -30,6 +30,12 @@
 ; replaces "lda displayNextPiece"
         lda		#0
 
+.segment "JMP_SET_MISSED_ENTRT_DELAY_TIMER"
+        ips_segment     "JMP_SET_MISSED_ENTRT_DELAY_TIMER",playState_spawnNextTetrimino+83 ; $98E1 / onePlayerPieceSelection
+
+; replaces "jsr chooseNextTetrimino"
+        jsr     setMissedEntryDelayTimer
+
 ; ----------------------------------------------------------------------------
 ; SWAP_TETRIMINO_TYPE
 ; ----------------------------------------------------------------------------
@@ -68,27 +74,61 @@ swapTetriminoTypeTable:
 ; ----------------------------------------------------------------------------
 
 dasChargeColorSubsetSize = 17
-dasChargeColorSetSize = 2 * dasChargeColorSubsetSize
+dasChargeColorSetSize = 3 * dasChargeColorSubsetSize
 
 ; each line contains 17 color values, one for each possible value of DAS charge (0-16)
 dasChargeColorSet1:
         .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
         .byte   $17,$17,$17,$17,$17,$17,$17,$17,$17,$17, $1c,$1c,$1c,$1c,$1c,$1c, $19 ; subset used during entry delay
+        .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
 		.assert	* - dasChargeColorSet1 = dasChargeColorSetSize, error, "Color set has wrong size"
 dasChargeColorSet2:
         .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
         .byte   $17,$17,$17,$17,$17,$17,$17,$17,$17,$17, $00,$00,$00,$00,$00,$00, $00 ; subset used during entry delay
+        .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
 		.assert	* - dasChargeColorSet2 = dasChargeColorSetSize, error, "Color set has wrong size"
 
 ; ----------------------------------------------------------------------------
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
 ; ----------------------------------------------------------------------------
 
+missedEntryDelayTimer := spawnCount+1 ; $001B
+missedEntryDelayButtonPressed := spawnCount+3 ; $001D
+
+setMissedEntryDelayTimer:
+		ldy 	#9
+		sty 	missedEntryDelayTimer
+		ldy 	#0
+		sty		missedEntryDelayButtonPressed
+        jsr     chooseNextTetrimino	; replaced code
+        rts
+
 renderDasCharge:
 		; only replace bg color if it is gray ($00), not if it is white ($30 meaning a tetris flash is happening)
         cpx     #$00
         bne     @setColor
-		; select color set: load offset from dasChargeColorSet1 in a
+
+		; missed entry delay timer handling
+		ldy		missedEntryDelayTimer
+		dey
+		bmi		@timerEnd
+		sty 	missedEntryDelayTimer
+		; still counting down
+		; check if left or right buttons pressed
+        lda     heldButtons
+        and     #$04
+        bne     @timerEnd
+        lda     newlyPressedButtons
+        and     #$03
+		beq		@timerEnd
+		lda		#1
+		sta		missedEntryDelayButtonPressed
+		; timer not needed any more
+		lda		#0
+		sta 	missedEntryDelayTimer
+@timerEnd:
+
+		; select color set: load offset from dasChargeColorSet1 in A
 		lda		#0
 		ldy		displayNextPiece
 		beq		@checkIfInEntryDelay
@@ -100,16 +140,40 @@ renderDasCharge:
 		bmi		@notInEntryDelay
 		cpy		#9
 		bpl		@notInEntryDelay
-		; in entry delay so switch to that color subset by adding to a
+		; in entry delay so switch to that color subset by adding to A
 		clc
 		adc		#dasChargeColorSubsetSize
+		jmp		@missedEntryDelayButtonNotPressed
 @notInEntryDelay:
-		; add das charge value to a
+
+		; check if left or right button was pressed just after entry delay
+		ldy 	missedEntryDelayButtonPressed
+		beq		@missedEntryDelayButtonNotPressed
+		tay
+        lda     heldButtons
+        and     #$03
+		tax
+		tya
+		cpx		#0
+        bne     @stillHeld
+		ldy		#0
+		sty		missedEntryDelayButtonPressed
+		jmp		@missedEntryDelayButtonNotPressed
+@stillHeld:
+		; just missed entry delay so switch color subset by adding to A
+		clc
+		adc		#dasChargeColorSubsetSize
+		adc		#dasChargeColorSubsetSize
+@missedEntryDelayButtonNotPressed:
+
+		; add das charge value to A
 		clc
 		adc		autorepeatX
+
 		; load color from selected index
 		tay
         ldx	    dasChargeColorSet1,y
+
 @setColor:
         stx     PPUDATA	; replaced code
         rts
