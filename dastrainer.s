@@ -79,12 +79,12 @@ dasChargeColorSetSize = 3 * dasChargeColorSubsetSize
 ; each line contains 17 color values, one for each possible value of DAS charge (0-16)
 dasChargeColorSet1:
         .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
-        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $1c,$1c,$1c,$1c,$1c,$1c, $19 ; subset used during entry delay
+        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $00,$00,$00,$00,$00,$00, $00 ; subset used during entry delay
         .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
         .assert * - dasChargeColorSet1 = dasChargeColorSetSize, error, "Color set has wrong size"
 dasChargeColorSet2:
         .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
-        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $00,$00,$00,$00,$00,$00, $00 ; subset used during entry delay
+        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $1c,$1c,$1c,$1c,$1c,$1c, $19 ; subset used during entry delay
         .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
         .assert * - dasChargeColorSet2 = dasChargeColorSetSize, error, "Color set has wrong size"
 
