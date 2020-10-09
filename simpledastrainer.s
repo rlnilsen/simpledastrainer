@@ -93,7 +93,7 @@ dasChargeColorSet2:
 ; ----------------------------------------------------------------------------
 
 missedEntryDelayTimer := spawnCount+1 ; $001B
-missedEntryDelayButtonPressed := spawnCount+3 ; $001D
+missedEntryDelayButtonPressed := spawnCount+2 ; $001C
 
 setMissedEntryDelayTimer:
         ldy     #9
