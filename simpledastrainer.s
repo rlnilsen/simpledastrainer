@@ -30,8 +30,8 @@
 ; replaces "lda displayNextPiece"
         lda     #0
 
-.segment "JMP_SET_MISSED_ENTRT_DELAY_TIMER"
-        ips_segment     "JMP_SET_MISSED_ENTRT_DELAY_TIMER",playState_spawnNextTetrimino+83 ; $98E1 / onePlayerPieceSelection
+.segment "JMP_SET_MISSED_ENTRY_DELAY_TIMER"
+        ips_segment     "JMP_SET_MISSED_ENTRY_DELAY_TIMER",playState_spawnNextTetrimino+83 ; $98E1 / onePlayerPieceSelection
 
 ; replaces "jsr chooseNextTetrimino"
         jsr     setMissedEntryDelayTimer
