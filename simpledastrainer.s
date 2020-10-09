@@ -172,7 +172,8 @@ renderDasCharge:
 
         ; load color from selected index
         tay
-        ldx         dasChargeColorSet1,y
+        ldx     dasChargeColorSet1,y
+        
 
 @setColor:
         stx     PPUDATA ; replaced code
