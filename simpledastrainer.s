@@ -36,6 +36,13 @@
 ; replaces "jsr chooseNextTetrimino"
         jsr     setMissedEntryDelayTimer
 
+.segment "JMP_INIT_GAME_STATE"
+        ips_segment     "JMP_INIT_GAME_STATE",gameModeState_initGameState+9 ; $86E5
+
+; at beginning of initGameState, replaces "ldx #$0F; lda #$00"
+        jsr initGameState_mod
+        nop
+
 ; ----------------------------------------------------------------------------
 ; SWAP_TETRIMINO_TYPE
 ; ----------------------------------------------------------------------------
@@ -94,6 +101,16 @@ dasChargeColorSet2:
 
 missedEntryDelayTimer := spawnCount+1 ; $001B
 missedEntryDelayButtonPressed := spawnCount+2 ; $001C
+
+initGameState_mod:
+        lda     #0
+        sta     missedEntryDelayTimer ; timer disabled for first piece
+        sta     missedEntryDelayButtonPressed
+        ; replaced code
+        ldx     #$0F
+        lda     #$00
+        ;
+        rts
 
 setMissedEntryDelayTimer:
         ldy     #9
