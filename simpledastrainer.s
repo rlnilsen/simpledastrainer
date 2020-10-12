@@ -60,7 +60,7 @@
         jsr     swapTetriminoType
 
 .segment "CODE"
-        ips_segment     "CODE",unreferenced_data1,515
+        ips_segment     "CODE",unreferenced_data1,637
 
 ; ----------------------------------------------------------------------------
 ; SWAP_TETRIMINO_TYPE
