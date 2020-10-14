@@ -80,20 +80,20 @@ swapTetriminoTypeTable:
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
 ; ----------------------------------------------------------------------------
 
-dasChargeColorSubsetSize = 17
-dasChargeColorSetSize = 3 * dasChargeColorSubsetSize
+DASCHARGECOLORSUBSETSIZE = 17
+DASCHARGECOLORSETSIZE = 3 * DASCHARGECOLORSUBSETSIZE
 
 ; each line contains 17 color values, one for each possible value of DAS charge (0-16)
 dasChargeColorSet1:
         .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
         .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $00,$00,$00,$00,$00,$00, $00 ; subset used during entry delay
         .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
-        .assert * - dasChargeColorSet1 = dasChargeColorSetSize, error, "Color set has wrong size"
+        .assert * - dasChargeColorSet1 = DASCHARGECOLORSETSIZE, error, "Color set has wrong size"
 dasChargeColorSet2:
         .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
         .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $1c,$1c,$1c,$1c,$1c,$1c, $19 ; subset used during entry delay
         .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
-        .assert * - dasChargeColorSet2 = dasChargeColorSetSize, error, "Color set has wrong size"
+        .assert * - dasChargeColorSet2 = DASCHARGECOLORSETSIZE, error, "Color set has wrong size"
 
 ; ----------------------------------------------------------------------------
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
@@ -149,7 +149,7 @@ renderDasCharge:
         lda     #0
         ldy     displayNextPiece
         beq     @checkIfInEntryDelay
-        lda     #dasChargeColorSetSize
+        lda     #DASCHARGECOLORSETSIZE
 @checkIfInEntryDelay:
         ; we are in entry delay if playState is 2 to 8 inclusive
         ldy     playState
@@ -159,7 +159,7 @@ renderDasCharge:
         bpl     @notInEntryDelay
         ; in entry delay so switch to that color subset by adding to A
         clc
-        adc     #dasChargeColorSubsetSize
+        adc     #DASCHARGECOLORSUBSETSIZE
         jmp     @missedEntryDelayButtonNotPressed
 @notInEntryDelay:
 
@@ -179,8 +179,8 @@ renderDasCharge:
 @stillHeld:
         ; just missed entry delay so switch color subset by adding to A
         clc
-        adc     #dasChargeColorSubsetSize
-        adc     #dasChargeColorSubsetSize
+        adc     #DASCHARGECOLORSUBSETSIZE
+        adc     #DASCHARGECOLORSUBSETSIZE
 @missedEntryDelayButtonNotPressed:
 
         ; add das charge value to A
