@@ -251,23 +251,39 @@ swapTetriminoTypeTable:
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
 ; ----------------------------------------------------------------------------
 
+STATSCOUNT = 7
 DASCHARGECOLORSUBSETSIZE = 17
-DASCHARGECOLORSETSIZE = 3 * DASCHARGECOLORSUBSETSIZE
+DASCHARGECOLORSETSIZE = 3 * DASCHARGECOLORSUBSETSIZE + STATSCOUNT
 
 ; each line contains 17 color values, one for each possible value of DAS charge (0-16)
 dasChargeColorSet1:
         .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
         .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $00,$00,$00,$00,$00,$00, $00 ; subset used during entry delay
         .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
+        .byte   $ff, $16, $28, $10, $ff, $ff, $ff
         .assert * - dasChargeColorSet1 = DASCHARGECOLORSETSIZE, error, "Color set has wrong size"
 dasChargeColorSet2:
         .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
         .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $1c,$1c,$1c,$1c,$1c,$1c, $19 ; subset used during entry delay
         .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
+        .byte   $ff, $16, $28, $10, $1c, $19, $00
         .assert * - dasChargeColorSet2 = DASCHARGECOLORSETSIZE, error, "Color set has wrong size"
 
-statIndexToColor:
-        .byte   $ff, $16, $28, $10, $ff, $1c, $19
+dasChargeColor_notInEntryDelayLUT:
+        .addr   dasChargeColorSet1+0*DASCHARGECOLORSUBSETSIZE
+        .addr   dasChargeColorSet2+0*DASCHARGECOLORSUBSETSIZE
+
+dasChargeColor_inEntryDelayLUT:
+        .addr   dasChargeColorSet1+1*DASCHARGECOLORSUBSETSIZE
+        .addr   dasChargeColorSet2+1*DASCHARGECOLORSUBSETSIZE
+
+dasChargeColor_missedEntryDelayLUT:
+        .addr   dasChargeColorSet1+2*DASCHARGECOLORSUBSETSIZE
+        .addr   dasChargeColorSet2+2*DASCHARGECOLORSUBSETSIZE
+
+dasChargeColor_statIndexToColorLUT:
+        .addr   dasChargeColorSet1+3*DASCHARGECOLORSUBSETSIZE
+        .addr   dasChargeColorSet2+3*DASCHARGECOLORSUBSETSIZE
 
 ; ----------------------------------------------------------------------------
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
@@ -276,7 +292,6 @@ statIndexToColor:
 missedEntryDelayTimer := spawnCount+1 ; $001B
 missedEntryDelayButtonPressed := spawnCount+2 ; $001C
 
-STATSCOUNT = 7
 statsIncremented := spawnCount+3 ; $001D, STATSCOUNT bytes - set to 1 when index associated color detected, to avoid incrementing statsCounters more than once per piece
 statsCounters := $0780 ; STATSCOUNT*2 bytes - counts how many pieces has seen the index associated color
 
@@ -364,14 +379,23 @@ initGameState_mod:
         rts
 
 ; in: tmp1: color
-; out: x: index or $ff if not found, flags n+z set by x
+; out: y: index or $ff if not found, flags n+z set by y
 colorToStatIndex:
-        ldx     #6
+        ; put address of statIndexToColor table in generalCounter
+        lda     displayNextPiece
+        asl     a
+        tay
+        lda     dasChargeColor_statIndexToColorLUT,y
+        sta     generalCounter
+        lda     dasChargeColor_statIndexToColorLUT+1,y
+        sta     generalCounter+1
+        ;
+        ldy     #6
 @loop:
-        lda     statIndexToColor,x
+        lda     (generalCounter),y
         cmp     tmp1
         beq     @ret
-        dex
+        dey
         bpl     @loop
 @ret:
         rts
@@ -471,12 +495,12 @@ renderDasCharge:
         stx     tmp1
         jsr     colorToStatIndex
         bmi     @endStats ; color not found
-        lda     statsIncremented,x
+        lda     statsIncremented,y
         bne     @endStats ; don't increase stat again untul new piece
         lda     #1
-        sta     statsIncremented,x
+        sta     statsIncremented,y
         ;
-        txa
+        tya
         asl     a
         tax
         ; inc 16 bits
@@ -549,9 +573,18 @@ updateStat:
 
 renderPieceStat_mod:
         sta     PPUADDR ; replaced code
+        ; put address of statIndexToColor table in generalCounter
+        lda     displayNextPiece
+        asl     a
+        tay
+        lda     dasChargeColor_statIndexToColorLUT,y
+        sta     generalCounter
+        lda     dasChargeColor_statIndexToColorLUT+1,y
+        sta     generalCounter+1
+        ;
         ldy     tmpCurrentPiece
         beq     @showStat
-        lda     statIndexToColor,y
+        lda     (generalCounter),y
         bmi     @hideStat
 @showStat:
         jmp     render_mode_play_and_demo+363 ; $9659
@@ -563,6 +596,15 @@ renderPieceStat_mod:
         jmp     render_mode_play_and_demo+375 ; $9665
 
 updateStatsPalette:
+        ; put address of statIndexToColor table in generalCounter
+        lda     displayNextPiece
+        asl     a
+        tay
+        lda     dasChargeColor_statIndexToColorLUT,y
+        sta     generalCounter
+        lda     dasChargeColor_statIndexToColorLUT+1,y
+        sta     generalCounter+1
+;
         lda     #$3f
         sta     PPUADDR
         lda     #$01
@@ -579,7 +621,7 @@ updateStatsPalette:
         rts
 
 @setPPUPaletteEntry:
-        lda     statIndexToColor,y
+        lda     (generalCounter),y
         bpl     @weHaveAColor
         lda     #$0f ; black
 @weHaveAColor:
