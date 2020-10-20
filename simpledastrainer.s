@@ -18,6 +18,27 @@
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
 ; ----------------------------------------------------------------------------
 
+.segment "GAME_BG"
+        ips_segment     "GAME_BG",game_nametable,1121 ; $BF3C
+
+; game_nametable
+        .incbin "build/simpledastrainer_game.nam.stripe"
+        .byte   $FF
+
+
+.segment "GAME_PALETTE"
+        ips_segment     "GAME_PALETTE",game_palette+3,8 ; $ACF6
+
+; default colors of stats labels to black
+        .byte   $0F,$0F,$0F,$0F
+        .byte   $0F,$0F,$0F,$0F
+
+.segment "JMP_RENDER_PIECE_STAT_MOD"
+        ips_segment     "JMP_RENDER_PIECE_STAT_MOD",render_mode_play_and_demo+360 ; $9656
+
+; replaces "sta PPUADDR"
+        jmp     renderPieceStat_mod
+
 .segment "JMP_SET_BACKGROUND_COLOR_BY_DAS_CHARGE"
         ips_segment     "JMP_SET_BACKGROUND_COLOR_BY_DAS_CHARGE",render_mode_play_and_demo+426 ; $9698 / @setPaletteColor
 
@@ -283,13 +304,48 @@ resetStatsCounters:
         ;jsr     updateAllStats not needed here because we do it every frame in patched gameModeState_vblankThenRunState2
         rts
 
-; skip rendering of stats if copying playfield to vram, to avoid nmi taking longer time than vblank
+; various mitigations to avoid nmi taking longer time than vblank
 checkSkipRenderStats:
-        lda     vramRow
-        cmp     #$20
-        beq     @end
+        lda     outOfDateRenderFlags
+        and     #$02
+        beq     @noRenderLevel
+        ; we are rendering level - delay lines and score rendering by shifting them to a different location in outOfDateRenderFlags
+        lda     outOfDateRenderFlags
+        and     #$05 ; Bit 0-lines 2-score
+        asl     a
+        asl     a
+        asl     a
+        sta     tmp1
+        lda     outOfDateRenderFlags
+        and     #<~$05 ; Bit 0-lines 2-score
+        ora     tmp1
+        sta     outOfDateRenderFlags
+        jmp     @skipDelayedOutOfDateRenderFlags
+@noRenderLevel:
+        ; we are _not_ rendering level, _un_delay lines and score rendering
+        lda     outOfDateRenderFlags
+        and     #$05<<3 ; Bit 3-lines 5-score
+        lsr     a
+        lsr     a
+        lsr     a
+        sta     tmp1
+        lda     outOfDateRenderFlags
+        and     #<~($05<<3) ; Bit 3-lines 5-score
+        ora     tmp1
+        sta     outOfDateRenderFlags
+@skipDelayedOutOfDateRenderFlags:
+        ; skip rendering of stats if rendering anything else in outOfDateRenderFlags
         lda     outOfDateRenderFlags
         and     #<~$40
+        bne     @disableRenderStats
+        ; skip rendering of stats if copying playfield to vram
+        ldy     vramRow
+        cpy     #$20
+        bne     @disableRenderStats
+        ; stats rendering _not_ disabled so update stats labels palette
+        jsr     updateStatsPalette
+        jmp     @end
+@disableRenderStats:
         sta     outOfDateRenderFlags
 @end:
         jsr     copyPlayfieldRowToVRAM ; replaced code
@@ -489,6 +545,46 @@ updateStat:
         lda     outOfDateRenderFlags
         ora     #$40
         sta     outOfDateRenderFlags
+        rts
+
+renderPieceStat_mod:
+        sta     PPUADDR ; replaced code
+        ldy     tmpCurrentPiece
+        beq     @showStat
+        lda     statIndexToColor,y
+        bmi     @hideStat
+@showStat:
+        jmp     render_mode_play_and_demo+363 ; $9659
+@hideStat:
+        ; tile pattern #$ff already in A (from statIndexToColor table lookup)
+        sta     PPUDATA
+        sta     PPUDATA
+        sta     PPUDATA
+        jmp     render_mode_play_and_demo+375 ; $9665
+
+updateStatsPalette:
+        lda     #$3f
+        sta     PPUADDR
+        lda     #$01
+        sta     PPUADDR
+        ldy     #1
+        jsr     @setPPUPaletteEntry
+        jsr     @setPPUPaletteEntry
+        jsr     @setPPUPaletteEntry
+        lda     #$0f ; black
+        sta     PPUDATA ; skip PPU unused palette entry
+        jsr     @setPPUPaletteEntry
+        jsr     @setPPUPaletteEntry
+        jsr     @setPPUPaletteEntry
+        rts
+
+@setPPUPaletteEntry:
+        lda     statIndexToColor,y
+        bpl     @weHaveAColor
+        lda     #$0f ; black
+@weHaveAColor:
+        sta     PPUDATA
+        iny
         rts
 
 ; ----------------------------------------------------------------------------
