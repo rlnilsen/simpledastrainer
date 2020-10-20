@@ -80,44 +80,8 @@
 ; replaces "tax; lda spawnTable,x"
         jsr     swapTetriminoType
 
-.segment "CODE"
-        ips_segment     "CODE",unreferenced_data1,637
-
-; ----------------------------------------------------------------------------
-; SWAP_TETRIMINO_TYPE
-; ----------------------------------------------------------------------------
-
-swapTetriminoTypeTable:
-        .byte  0,1,2,3,4,5,6 ; original behaviour
-;        .byte  0,0,0,0,0,0,0 ; T only
-;        .byte  1,1,1,1,1,1,1 ; J only
-;        .byte  2,2,2,2,2,2,2 ; Z only
-;        .byte  3,3,3,3,3,3,3 ; O only
-;        .byte  4,4,4,4,4,4,4 ; S only
-;        .byte  5,5,5,5,5,5,5 ; L only
-;        .byte  6,6,6,6,6,6,6 ; I only
-
-; ----------------------------------------------------------------------------
-; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
-; ----------------------------------------------------------------------------
-
-DASCHARGECOLORSUBSETSIZE = 17
-DASCHARGECOLORSETSIZE = 3 * DASCHARGECOLORSUBSETSIZE
-
-; each line contains 17 color values, one for each possible value of DAS charge (0-16)
-dasChargeColorSet1:
-        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
-        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $00,$00,$00,$00,$00,$00, $00 ; subset used during entry delay
-        .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
-        .assert * - dasChargeColorSet1 = DASCHARGECOLORSETSIZE, error, "Color set has wrong size"
-dasChargeColorSet2:
-        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
-        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $1c,$1c,$1c,$1c,$1c,$1c, $19 ; subset used during entry delay
-        .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
-        .assert * - dasChargeColorSet2 = DASCHARGECOLORSETSIZE, error, "Color set has wrong size"
-
-statIndexToColor:
-        .byte   $ff, $16, $28, $10, $1c, $19, $ff
+.segment "CODE2"
+        ips_segment     "CODE2",unreferenced_data4,515
 
 ; ----------------------------------------------------------------------------
 ; 16-BIT DIVISION (16-BIT DIVIDEND, DIVISOR, RESULT AND REMAINDER)
@@ -244,6 +208,45 @@ multiplyBy100:
         sty     tmp1
         sta     tmp2
         rts
+
+.segment "CODE"
+        ips_segment     "CODE",unreferenced_data1,637
+
+; ----------------------------------------------------------------------------
+; SWAP_TETRIMINO_TYPE
+; ----------------------------------------------------------------------------
+
+swapTetriminoTypeTable:
+        .byte  0,1,2,3,4,5,6 ; original behaviour
+;        .byte  0,0,0,0,0,0,0 ; T only
+;        .byte  1,1,1,1,1,1,1 ; J only
+;        .byte  2,2,2,2,2,2,2 ; Z only
+;        .byte  3,3,3,3,3,3,3 ; O only
+;        .byte  4,4,4,4,4,4,4 ; S only
+;        .byte  5,5,5,5,5,5,5 ; L only
+;        .byte  6,6,6,6,6,6,6 ; I only
+
+; ----------------------------------------------------------------------------
+; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
+; ----------------------------------------------------------------------------
+
+DASCHARGECOLORSUBSETSIZE = 17
+DASCHARGECOLORSETSIZE = 3 * DASCHARGECOLORSUBSETSIZE
+
+; each line contains 17 color values, one for each possible value of DAS charge (0-16)
+dasChargeColorSet1:
+        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
+        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $00,$00,$00,$00,$00,$00, $00 ; subset used during entry delay
+        .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
+        .assert * - dasChargeColorSet1 = DASCHARGECOLORSETSIZE, error, "Color set has wrong size"
+dasChargeColorSet2:
+        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
+        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $1c,$1c,$1c,$1c,$1c,$1c, $19 ; subset used during entry delay
+        .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
+        .assert * - dasChargeColorSet2 = DASCHARGECOLORSETSIZE, error, "Color set has wrong size"
+
+statIndexToColor:
+        .byte   $ff, $16, $28, $10, $ff, $1c, $19
 
 ; ----------------------------------------------------------------------------
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
