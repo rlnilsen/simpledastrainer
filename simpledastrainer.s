@@ -69,7 +69,8 @@
         ips_segment     "JMP_SET_BACKGROUND_COLOR_BY_DAS_CHARGE",render_mode_play_and_demo+426 ; $9698 / @setPaletteColor
 
 ; replaces "stx PPUDATA"
-        jsr     renderDasCharge
+        jmp     renderDasCharge
+after_renderDasCharge:
 
 .segment "ALWAYS_DISPLAY_NEXT_PIECE"
         ips_segment     "ALWAYS_DISPLAY_NEXT_PIECE",stageSpriteForNextPiece ; $8BCE
@@ -109,7 +110,8 @@
         ips_segment     "JMP_CHECK_SKIP_RENDER_STATS",$952A ; $952A
 
 ; replaces "jsr copyPlayfieldRowToVRAM"
-        jsr     checkSkipRenderStats
+        jmp     checkSkipRenderStats
+after_checkSkipRenderStats:
 
 ; ----------------------------------------------------------------------------
 ; SWAP_TETRIMINO_TYPE
@@ -366,6 +368,7 @@ checkSkipRenderStats:
         ; we are _not_ rendering level, _un_delay lines and score rendering
         lda     outOfDateRenderFlags
         and     #$05<<3 ; Bit 3-lines 5-score
+        beq     @skipDelayedOutOfDateRenderFlags ; speed optimization
         lsr     a
         lsr     a
         lsr     a
@@ -390,7 +393,7 @@ checkSkipRenderStats:
         sta     outOfDateRenderFlags
 @end:
         jsr     copyPlayfieldRowToVRAM ; replaced code
-        rts
+        jmp     after_checkSkipRenderStats
 
 initGameState_mod:
         ; replaced code
@@ -402,21 +405,6 @@ initGameState_mod:
         sta     missedEntryDelayButtonPressed
         jsr     resetStatsIncremented
         jsr     resetStatsCounters
-        rts
-
-; in: tmp1: color
-; out: y: index or $ff if not found, flags n+z set by y
-colorToStatIndex:
-        lda     displayNextPiece
-        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of statIndexToColor table in generalCounter
-        ldy     #6
-@loop:
-        lda     (generalCounter),y
-        cmp     tmp1
-        beq     @ret
-        dey
-        bpl     @loop
-@ret:
         rts
 
 ; number of frames to check for missed left/right press after entry delay
@@ -492,8 +480,7 @@ renderDasCharge:
 @stillHeld:
         ; just missed entry delay so switch color subset by adding to A
         clc
-        adc     #DASCHARGECOLORSUBSETSIZE
-        adc     #DASCHARGECOLORSUBSETSIZE
+        adc     #2*DASCHARGECOLORSUBSETSIZE
 @missedEntryDelayButtonNotPressed:
 
         ; add das charge value to A
@@ -506,11 +493,21 @@ renderDasCharge:
         
         ; stats
         stx     tmp3 ; save X
-        stx     tmp1
-        jsr     colorToStatIndex
+        stx     tmp1 ; color
+        ;
+        lda     displayNextPiece
+        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of current color set's statIndexToColor table in generalCounter
+        ldy     #6
+@loop:
+        lda     (generalCounter),y
+        cmp     tmp1
+        beq     @done
+        dey
+        bpl     @loop
+@done:
         bmi     @endStats ; color not found
         lda     statsIncremented,y
-        bne     @endStats ; don't increase stat again untul new piece
+        bne     @endStats ; don't increase stat again until new piece
         lda     #1
         sta     statsIncremented,y
         ;
@@ -523,7 +520,7 @@ renderDasCharge:
 
 @setColor:
         stx     PPUDATA ; replaced code
-        rts
+        jmp     after_renderDasCharge
 
 ; calc percentages, conv to bcd, request transfer to ppu
 updateAllStats:
@@ -585,7 +582,7 @@ updateStat:
 renderPieceStat_mod:
         sta     PPUADDR ; replaced code
         lda     displayNextPiece
-        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of statIndexToColor table in generalCounter
+        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of current color set's statIndexToColor table in generalCounter
         ldy     tmpCurrentPiece ; stat line # (0-6)
         beq     @showStat ; always show the first stat (total piece count)
         lda     (generalCounter),y ; color assigned to stat line Y
@@ -601,7 +598,7 @@ renderPieceStat_mod:
 
 updateStatsPalette:
         lda     displayNextPiece
-        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of statIndexToColor table in generalCounter
+        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of current color set's statIndexToColor table in generalCounter
         lda     #$3f
         sta     PPUADDR
         lda     #$01
