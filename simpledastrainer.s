@@ -29,6 +29,17 @@
 .endif
 .endmacro
 
+; put 16 bits from lut+2*A into dest
+; clobbers: A, Y (both set to A<<1)
+.macro  lut16   lut,dest
+        asl     a
+        tay
+        lda     lut,y
+        sta     dest
+        lda     lut+1,y
+        sta     dest+1
+.endmacro
+
 ; ----------------------------------------------------------------------------
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
 ; ----------------------------------------------------------------------------
@@ -396,15 +407,8 @@ initGameState_mod:
 ; in: tmp1: color
 ; out: y: index or $ff if not found, flags n+z set by y
 colorToStatIndex:
-        ; put address of statIndexToColor table in generalCounter
         lda     displayNextPiece
-        asl     a
-        tay
-        lda     dasChargeColor_statIndexToColorLUT,y
-        sta     generalCounter
-        lda     dasChargeColor_statIndexToColorLUT+1,y
-        sta     generalCounter+1
-        ;
+        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of statIndexToColor table in generalCounter
         ldy     #6
 @loop:
         lda     (generalCounter),y
@@ -580,15 +584,8 @@ updateStat:
 
 renderPieceStat_mod:
         sta     PPUADDR ; replaced code
-        ; put address of statIndexToColor table in generalCounter
         lda     displayNextPiece
-        asl     a
-        tay
-        lda     dasChargeColor_statIndexToColorLUT,y
-        sta     generalCounter
-        lda     dasChargeColor_statIndexToColorLUT+1,y
-        sta     generalCounter+1
-        ;
+        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of statIndexToColor table in generalCounter
         ldy     tmpCurrentPiece
         beq     @showStat
         lda     (generalCounter),y
@@ -603,15 +600,8 @@ renderPieceStat_mod:
         jmp     render_mode_play_and_demo+375 ; $9665
 
 updateStatsPalette:
-        ; put address of statIndexToColor table in generalCounter
         lda     displayNextPiece
-        asl     a
-        tay
-        lda     dasChargeColor_statIndexToColorLUT,y
-        sta     generalCounter
-        lda     dasChargeColor_statIndexToColorLUT+1,y
-        sta     generalCounter+1
-;
+        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of statIndexToColor table in generalCounter
         lda     #$3f
         sta     PPUADDR
         lda     #$01
