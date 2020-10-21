@@ -14,6 +14,21 @@
 .include "build/tetris.inc"
 .include "ips.inc"
 
+; inc 16 bits
+.macro  inc16   addr,idx
+.ifblank idx
+        inc     addr
+        bne     :+
+        inc     addr+1
+:
+.else
+        inc     addr,idx
+        bne     :+
+        inc     addr+1,idx
+:
+.endif
+.endmacro
+
 ; ----------------------------------------------------------------------------
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
 ; ----------------------------------------------------------------------------
@@ -407,11 +422,7 @@ MISSEDENTRYDELAYFRAMES = 9
 ; called for each new piece except the first one
 setMissedEntryDelayTimer:
         jsr     resetStatsIncremented
-        ; inc 16 bits
-        inc     statsCounters
-        bne     :+
-        inc     statsCounters+1
-:
+        inc16   statsCounters
         ldy     #MISSEDENTRYDELAYFRAMES
         sty     missedEntryDelayTimer
         ldy     #0
@@ -503,11 +514,7 @@ renderDasCharge:
         tya
         asl     a
         tax
-        ; inc 16 bits
-        inc     statsCounters,x
-        bne     :+
-        inc     statsCounters+1,x
-:
+        inc16   statsCounters,x
 @endStats:
         ldx     tmp3 ; restore X
 
