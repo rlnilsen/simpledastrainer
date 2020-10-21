@@ -435,10 +435,6 @@ setMissedEntryDelayTimer:
         rts
 
 renderDasCharge:
-        ; only replace bg color if it is gray ($00), not if it is white ($30 meaning a tetris flash is happening)
-        cpx     #$00
-        bne     @setColor
-
         ; missed entry delay timer handling
         ldy     missedEntryDelayTimer
         dey
@@ -458,6 +454,9 @@ renderDasCharge:
         lda     #0
         sta     missedEntryDelayTimer
 @timerEnd:
+        ; only replace bg color if it is gray ($00), not if it is white ($30 meaning a tetris flash is happening)
+        cpx     #$00
+        bne     @setColor
 
         ; select color set: load offset from dasChargeColorSet1 in A
         lda     #0
