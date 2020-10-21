@@ -69,8 +69,8 @@
         ips_segment     "JMP_SET_BACKGROUND_COLOR_BY_DAS_CHARGE",render_mode_play_and_demo+426 ; $9698 / @setPaletteColor
 
 ; replaces "stx PPUDATA"
-        jmp     renderDasCharge
-after_renderDasCharge:
+        jmp     renderDasChargeBgColor
+after_renderDasChargeBgColor:
 
 .segment "ALWAYS_DISPLAY_NEXT_PIECE"
         ips_segment     "ALWAYS_DISPLAY_NEXT_PIECE",stageSpriteForNextPiece ; $8BCE
@@ -101,7 +101,8 @@ after_renderDasCharge:
         ips_segment     "JMP_UPDATE_COLOR_STATS",gameModeState_vblankThenRunState2 ; $9E27
 
 ; replaces "lda #$02; sta gameModeState; jsr noop_disabledVramRowIncr"
-        jsr     updateAllStats
+        jsr     calcDasChargeBgColor
+after_calcDasChargeBgColor:
         lda     #$02
         sta     gameModeState
         ; can drop jsr noop_disabledVramRowIncr because it is a noop
@@ -317,10 +318,11 @@ dasChargeColor_statIndexToColorLUT:
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
 ; ----------------------------------------------------------------------------
 
-missedEntryDelayTimer := spawnCount+1 ; $001B
-missedEntryDelayButtonPressed := spawnCount+2 ; $001C
+dasChargeBgColor := spawnCount+1 ; $001B
+missedEntryDelayTimer := spawnCount+2 ; $001C
+missedEntryDelayButtonPressed := spawnCount+3 ; $001D
 
-statsIncremented := spawnCount+3 ; $001D, STATSCOUNT bytes - set to 1 when index associated color detected, to avoid incrementing statsCounters more than once per piece
+statsIncremented := spawnCount+4 ; $001E, STATSCOUNT bytes - set to 1 when index associated color detected, to avoid incrementing statsCounters more than once per piece
 statsCounters := $0780 ; STATSCOUNT*2 bytes - counts how many pieces has seen the index associated color
 
 ; called for each new piece
@@ -422,7 +424,7 @@ setMissedEntryDelayTimer:
         jsr     chooseNextTetrimino     ; replaced code
         rts
 
-renderDasCharge:
+calcDasChargeBgColor:
         ; missed entry delay timer handling
         ldy     missedEntryDelayTimer
         dey
@@ -442,10 +444,6 @@ renderDasCharge:
         lda     #0
         sta     missedEntryDelayTimer
 @timerEnd:
-        ; only replace bg color if it is gray ($00), not if it is white ($30 meaning a tetris flash is happening)
-        cpx     #$00
-        bne     @setColor
-
         ; select color set: load offset from dasChargeColorSet1 in A
         lda     #0
         ldy     displayNextPiece
@@ -519,8 +517,18 @@ renderDasCharge:
         ldx     tmp3 ; restore X
 
 @setColor:
+        stx     dasChargeBgColor
+        jsr     updateAllStats
+        jmp     after_calcDasChargeBgColor
+
+renderDasChargeBgColor:
+        ; only replace bg color if it is gray ($00), not if it is white ($30 meaning a tetris flash is happening)
+        cpx     #$00
+        bne     @setColor
+        ldx     dasChargeBgColor
+@setColor:
         stx     PPUDATA ; replaced code
-        jmp     after_renderDasCharge
+        jmp     after_renderDasChargeBgColor
 
 ; calc percentages, conv to bcd, request transfer to ppu
 updateAllStats:
