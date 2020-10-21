@@ -582,14 +582,15 @@ updateStat:
         sta     outOfDateRenderFlags
         rts
 
+; @showStat path must not alter X
 renderPieceStat_mod:
         sta     PPUADDR ; replaced code
         lda     displayNextPiece
         lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of statIndexToColor table in generalCounter
-        ldy     tmpCurrentPiece
-        beq     @showStat
-        lda     (generalCounter),y
-        bmi     @hideStat
+        ldy     tmpCurrentPiece ; stat line # (0-6)
+        beq     @showStat ; always show the first stat (total piece count)
+        lda     (generalCounter),y ; color assigned to stat line Y
+        bmi     @hideStat ; branch if stat line has no color assigned (value $ff)
 @showStat:
         jmp     render_mode_play_and_demo+363 ; $9659
 @hideStat:
