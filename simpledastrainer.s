@@ -71,8 +71,18 @@
 ; replaces "sta PPUADDR"
         jmp     renderPieceStat_mod
 
-.segment "JMP_SET_BACKGROUND_COLOR_BY_DAS_CHARGE"
-        ips_segment     "JMP_SET_BACKGROUND_COLOR_BY_DAS_CHARGE",render_mode_play_and_demo+426 ; $9698 / @setPaletteColor
+.segment "JMP_CALC_DAS_CHARGE_BG_COLOR_AND_STATS"
+        ips_segment     "JMP_CALC_DAS_CHARGE_BG_COLOR_AND_STATS",gameModeState_vblankThenRunState2 ; $9E27
+
+; replaces "lda #$02; sta gameModeState; jsr noop_disabledVramRowIncr"
+        jmp     calcDasChargeBgColorAndStats
+after_calcDasChargeBgColorAndStats:
+        lda     #$02
+        sta     gameModeState
+        ; can drop jsr noop_disabledVramRowIncr because it is a noop
+
+.segment "JMP_RENDER_DAS_CHARGE_BG_COLOR"
+        ips_segment     "JMP_RENDER_DAS_CHARGE_BG_COLOR",render_mode_play_and_demo+426 ; $9698 / @setPaletteColor
 
 ; replaces "stx PPUDATA"
         jmp     renderDasChargeBgColor
@@ -84,11 +94,12 @@ after_renderDasChargeBgColor:
 ; replaces "lda displayNextPiece"
         lda     #0
 
-.segment "JMP_SET_MISSED_ENTRY_DELAY_TIMER"
-        ips_segment     "JMP_SET_MISSED_ENTRY_DELAY_TIMER",playState_spawnNextTetrimino+83 ; $98E1 / onePlayerPieceSelection
+.segment "JMP_NEW_PIECE_MOD"
+        ips_segment     "JMP_NEW_PIECE_MOD",playState_spawnNextTetrimino+83 ; $98E1 / onePlayerPieceSelection
 
 ; replaces "jsr chooseNextTetrimino"
-        jsr     setMissedEntryDelayTimer
+        jmp     spawnNextTetrimino_mod
+after_spawnNextTetrimino_mod:
 
 .segment "DISABLE_PIECE_STATS"
         ips_segment     "DISABLE_PIECE_STATS",incrementPieceStat ; $9969
@@ -100,18 +111,9 @@ after_renderDasChargeBgColor:
         ips_segment     "JMP_INIT_GAME_STATE",gameModeState_initGameState+21 ; $86F1, after statsByType init so we can overwrite
 
 ; replaces "sta player1_tetriminoX; sta player2_tetriminoX"
-        jsr initGameState_mod
+        jmp initGameState_mod
         nop
-
-.segment "JMP_UPDATE_COLOR_STATS"
-        ips_segment     "JMP_UPDATE_COLOR_STATS",gameModeState_vblankThenRunState2 ; $9E27
-
-; replaces "lda #$02; sta gameModeState; jsr noop_disabledVramRowIncr"
-        jmp     calcDasChargeBgColor
-after_calcDasChargeBgColor:
-        lda     #$02
-        sta     gameModeState
-        ; can drop jsr noop_disabledVramRowIncr because it is a noop
+after_initGameState_mod:
 
 .segment "JMP_CHECK_SKIP_RENDER_STATS"
         ips_segment     "JMP_CHECK_SKIP_RENDER_STATS",$952A ; $952A
@@ -413,14 +415,14 @@ initGameState_mod:
         sta     missedEntryDelayButtonPressed
         jsr     resetStatsIncremented
         jsr     resetStatsCounters
-        rts
+        jmp     after_initGameState_mod
 
 ; number of frames to check for missed left/right press after entry delay
 ; in practise seems to be -3 off, since 9 gives two lines on level 18 (level 18 has 3 frames per line)
 MISSEDENTRYDELAYFRAMES = 9
 
 ; called for each new piece except the first one
-setMissedEntryDelayTimer:
+spawnNextTetrimino_mod:
         jsr     resetStatsIncremented
         inc16   statsCounters
         ldy     #MISSEDENTRYDELAYFRAMES
@@ -428,9 +430,9 @@ setMissedEntryDelayTimer:
         ldy     #0
         sty     missedEntryDelayButtonPressed
         jsr     chooseNextTetrimino     ; replaced code
-        rts
+        jmp     after_spawnNextTetrimino_mod
 
-calcDasChargeBgColor:
+calcDasChargeBgColorAndStats:
         ; missed entry delay timer handling
         ldy     missedEntryDelayTimer
         dey
@@ -525,7 +527,7 @@ calcDasChargeBgColor:
 @setColor:
         stx     dasChargeBgColor
         jsr     updateAllStats
-        jmp     after_calcDasChargeBgColor
+        jmp     after_calcDasChargeBgColorAndStats
 
 renderDasChargeBgColor:
         ; only replace bg color if it is gray ($00), not if it is white ($30 meaning a tetris flash is happening)
