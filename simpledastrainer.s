@@ -1,18 +1,22 @@
 ;
 ; DAS Trainer patch for NES NTSC Tetris. Adds these functions:
 ;
-; 1. Visualizes the current DAS charge by changing the color of the background.
+; 1. Allows choosing which tetriminos to spawn.
+; Each possible tetrimino type is mapped to any other through a look up table in ROM.
+; This makes it easy to customize with a hex editor.
+;
+; 2. Visualizes the current DAS charge by changing the color of the background.
 ; Each possible DAS charge value is mapped to a color through a look up table in ROM.
 ; This makes it easy to customize the colors with a hex editor.
 ; There are two sets of colors that can be switched between by pressing the select button.
 ;
-; 2. Allows choosing which tetriminos to spawn.
-; Each possible tetrimino type is mapped to any other through a look up table in ROM.
-; This makes it easy to customize with a hex editor.
-;
 
 .include "build/tetris.inc"
 .include "ips.inc"
+
+; ----------------------------------------------------------------------------
+; MACROS
+; ----------------------------------------------------------------------------
 
 ; inc 16 bits
 .macro  inc16   addr,idx
@@ -41,89 +45,7 @@
 .endmacro
 
 ; ----------------------------------------------------------------------------
-; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
-; ----------------------------------------------------------------------------
-
-.segment "LEGALSCREEN_BG"
-        ips_segment     "LEGALSCREEN_BG",legal_screen_nametable,1121 ; $ADB8
-
-; legal_screen_nametable
-        .incbin "build/simpledastrainer_legal.nam.stripe"
-        .byte   $FF
-
-.segment "GAME_BG"
-        ips_segment     "GAME_BG",game_nametable,1121 ; $BF3C
-
-; game_nametable
-        .incbin "build/simpledastrainer_game.nam.stripe"
-        .byte   $FF
-
-.segment "GAME_PALETTE"
-        ips_segment     "GAME_PALETTE",game_palette+3,8 ; $ACF6
-
-; default colors of stats labels to black
-        .byte   $0F,$0F,$0F,$0F
-        .byte   $0F,$0F,$0F,$0F
-
-.segment "JMP_RENDER_PIECE_STAT_MOD"
-        ips_segment     "JMP_RENDER_PIECE_STAT_MOD",render_mode_play_and_demo+360 ; $9656
-
-; replaces "sta PPUADDR"
-        jmp     renderPieceStat_mod
-
-.segment "JMP_CALC_DAS_CHARGE_BG_COLOR_AND_STATS"
-        ips_segment     "JMP_CALC_DAS_CHARGE_BG_COLOR_AND_STATS",gameModeState_vblankThenRunState2 ; $9E27
-
-; replaces "lda #$02; sta gameModeState; jsr noop_disabledVramRowIncr"
-        jmp     calcDasChargeBgColorAndStats
-after_calcDasChargeBgColorAndStats:
-        lda     #$02
-        sta     gameModeState
-        ; can drop jsr noop_disabledVramRowIncr because it is a noop
-
-.segment "JMP_RENDER_DAS_CHARGE_BG_COLOR"
-        ips_segment     "JMP_RENDER_DAS_CHARGE_BG_COLOR",render_mode_play_and_demo+426 ; $9698 / @setPaletteColor
-
-; replaces "stx PPUDATA"
-        jmp     renderDasChargeBgColor
-after_renderDasChargeBgColor:
-
-.segment "ALWAYS_DISPLAY_NEXT_PIECE"
-        ips_segment     "ALWAYS_DISPLAY_NEXT_PIECE",stageSpriteForNextPiece ; $8BCE
-
-; replaces "lda displayNextPiece"
-        lda     #0
-
-.segment "JMP_NEW_PIECE_MOD"
-        ips_segment     "JMP_NEW_PIECE_MOD",playState_spawnNextTetrimino+83 ; $98E1 / onePlayerPieceSelection
-
-; replaces "jsr chooseNextTetrimino"
-        jmp     spawnNextTetrimino_mod
-after_spawnNextTetrimino_mod:
-
-.segment "DISABLE_PIECE_STATS"
-        ips_segment     "DISABLE_PIECE_STATS",incrementPieceStat ; $9969
-
-; replaces "tax"
-       rts
-
-.segment "JMP_INIT_GAME_STATE"
-        ips_segment     "JMP_INIT_GAME_STATE",gameModeState_initGameState+21 ; $86F1, after statsByType init so we can overwrite
-
-; replaces "sta player1_tetriminoX; sta player2_tetriminoX"
-        jmp initGameState_mod
-        nop
-after_initGameState_mod:
-
-.segment "JMP_CHECK_SKIP_RENDER_STATS"
-        ips_segment     "JMP_CHECK_SKIP_RENDER_STATS",$952A ; $952A
-
-; replaces "jsr copyPlayfieldRowToVRAM"
-        jmp     checkSkipRenderStats
-after_checkSkipRenderStats:
-
-; ----------------------------------------------------------------------------
-; SWAP_TETRIMINO_TYPE
+; MOD: SWAP TETRIMINO TYPE
 ; ----------------------------------------------------------------------------
 
 .segment "JMP_SWAP_TETRIMINO_TYPE_LOCATION_1"
@@ -140,6 +62,25 @@ after_checkSkipRenderStats:
 
 .segment "CODE2"
         ips_segment     "CODE2",unreferenced_data4,515
+
+swapTetriminoTypeTable:
+        .byte  0,1,2,3,4,5,6 ; original behaviour
+;        .byte  0,0,0,0,0,0,0 ; T only
+;        .byte  1,1,1,1,1,1,1 ; J only
+;        .byte  2,2,2,2,2,2,2 ; Z only
+;        .byte  3,3,3,3,3,3,3 ; O only
+;        .byte  4,4,4,4,4,4,4 ; S only
+;        .byte  5,5,5,5,5,5,5 ; L only
+;        .byte  6,6,6,6,6,6,6 ; I only
+
+swapTetriminoType:
+        tax
+        lda     swapTetriminoTypeTable,x
+        ; replaced code
+        tax
+        lda     spawnTable,x
+        ;
+        rts
 
 ; ----------------------------------------------------------------------------
 ; 16-BIT DIVISION (16-BIT DIVIDEND, DIVISOR, RESULT AND REMAINDER)
@@ -267,26 +208,90 @@ multiplyBy100:
         sta     tmp2
         rts
 
+; ----------------------------------------------------------------------------
+; MOD: SET BACKGROUND COLOR BY DAS CHARGE
+; ----------------------------------------------------------------------------
+
+.segment "LEGALSCREEN_BG"
+        ips_segment     "LEGALSCREEN_BG",legal_screen_nametable,1121 ; $ADB8
+
+; legal_screen_nametable
+        .incbin "build/simpledastrainer_legal.nam.stripe"
+        .byte   $FF
+
+.segment "GAME_BG"
+        ips_segment     "GAME_BG",game_nametable,1121 ; $BF3C
+
+; game_nametable
+        .incbin "build/simpledastrainer_game.nam.stripe"
+        .byte   $FF
+
+.segment "GAME_PALETTE"
+        ips_segment     "GAME_PALETTE",game_palette+3,8 ; $ACF6
+
+; default colors of stats labels to black
+        .byte   $0F,$0F,$0F,$0F
+        .byte   $0F,$0F,$0F,$0F
+
+.segment "JMP_RENDER_PIECE_STAT_MOD"
+        ips_segment     "JMP_RENDER_PIECE_STAT_MOD",render_mode_play_and_demo+360 ; $9656
+
+; replaces "sta PPUADDR"
+        jmp     renderPieceStat_mod
+
+.segment "JMP_CALC_DAS_CHARGE_BG_COLOR_AND_STATS"
+        ips_segment     "JMP_CALC_DAS_CHARGE_BG_COLOR_AND_STATS",gameModeState_vblankThenRunState2 ; $9E27
+
+; replaces "lda #$02; sta gameModeState; jsr noop_disabledVramRowIncr"
+        jmp     calcDasChargeBgColorAndStats
+after_calcDasChargeBgColorAndStats:
+        lda     #$02
+        sta     gameModeState
+        ; can drop jsr noop_disabledVramRowIncr because it is a noop
+
+.segment "JMP_RENDER_DAS_CHARGE_BG_COLOR"
+        ips_segment     "JMP_RENDER_DAS_CHARGE_BG_COLOR",render_mode_play_and_demo+426 ; $9698 / @setPaletteColor
+
+; replaces "stx PPUDATA"
+        jmp     renderDasChargeBgColor
+after_renderDasChargeBgColor:
+
+.segment "ALWAYS_DISPLAY_NEXT_PIECE"
+        ips_segment     "ALWAYS_DISPLAY_NEXT_PIECE",stageSpriteForNextPiece ; $8BCE
+
+; replaces "lda displayNextPiece"
+        lda     #0
+
+.segment "JMP_NEW_PIECE_MOD"
+        ips_segment     "JMP_NEW_PIECE_MOD",playState_spawnNextTetrimino+83 ; $98E1 / onePlayerPieceSelection
+
+; replaces "jsr chooseNextTetrimino"
+        jmp     spawnNextTetrimino_mod
+after_spawnNextTetrimino_mod:
+
+.segment "DISABLE_PIECE_STATS"
+        ips_segment     "DISABLE_PIECE_STATS",incrementPieceStat ; $9969
+
+; replaces "tax"
+       rts
+
+.segment "JMP_INIT_GAME_STATE"
+        ips_segment     "JMP_INIT_GAME_STATE",gameModeState_initGameState+21 ; $86F1, after statsByType init so we can overwrite
+
+; replaces "sta player1_tetriminoX; sta player2_tetriminoX"
+        jmp initGameState_mod
+        nop
+after_initGameState_mod:
+
+.segment "JMP_CHECK_SKIP_RENDER_STATS"
+        ips_segment     "JMP_CHECK_SKIP_RENDER_STATS",$952A ; $952A
+
+; replaces "jsr copyPlayfieldRowToVRAM"
+        jmp     checkSkipRenderStats
+after_checkSkipRenderStats:
+
 .segment "CODE"
         ips_segment     "CODE",unreferenced_data1,637
-
-; ----------------------------------------------------------------------------
-; SWAP_TETRIMINO_TYPE
-; ----------------------------------------------------------------------------
-
-swapTetriminoTypeTable:
-        .byte  0,1,2,3,4,5,6 ; original behaviour
-;        .byte  0,0,0,0,0,0,0 ; T only
-;        .byte  1,1,1,1,1,1,1 ; J only
-;        .byte  2,2,2,2,2,2,2 ; Z only
-;        .byte  3,3,3,3,3,3,3 ; O only
-;        .byte  4,4,4,4,4,4,4 ; S only
-;        .byte  5,5,5,5,5,5,5 ; L only
-;        .byte  6,6,6,6,6,6,6 ; I only
-
-; ----------------------------------------------------------------------------
-; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
-; ----------------------------------------------------------------------------
 
 STATSCOUNT = 7
 DASCHARGECOLORSUBSETSIZE = 17
@@ -321,10 +326,6 @@ dasChargeColor_missedEntryDelayLUT:
 dasChargeColor_statIndexToColorLUT:
         .addr   dasChargeColorSet1+3*DASCHARGECOLORSUBSETSIZE
         .addr   dasChargeColorSet2+3*DASCHARGECOLORSUBSETSIZE
-
-; ----------------------------------------------------------------------------
-; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
-; ----------------------------------------------------------------------------
 
 dasChargeBgColor := spawnCount+1 ; $001B
 missedEntryDelayTimer := spawnCount+2 ; $001C
@@ -469,7 +470,6 @@ calcDasChargeBgColorAndStats:
         adc     #DASCHARGECOLORSUBSETSIZE
         jmp     @missedEntryDelayButtonNotPressed
 @notInEntryDelay:
-
         ; check if left or right button was pressed just after entry delay
         ldy     missedEntryDelayButtonPressed
         beq     @missedEntryDelayButtonNotPressed
@@ -488,15 +488,12 @@ calcDasChargeBgColorAndStats:
         clc
         adc     #2*DASCHARGECOLORSUBSETSIZE
 @missedEntryDelayButtonNotPressed:
-
         ; add das charge value to A
         clc
         adc     autorepeatX
-
         ; load color from selected index
         tay
         ldx     dasChargeColorSet1,y
-        
         ; stats
         stx     tmp3 ; save X
         stx     tmp1 ; color
@@ -523,7 +520,6 @@ calcDasChargeBgColorAndStats:
         inc16   statsCounters,x
 @endStats:
         ldx     tmp3 ; restore X
-
 @setColor:
         stx     dasChargeBgColor
         jsr     updateAllStats
@@ -637,17 +633,4 @@ updateStatsPalette:
 @weHaveAColor:
         sta     PPUDATA
         iny
-        rts
-
-; ----------------------------------------------------------------------------
-; SWAP_TETRIMINO_TYPE
-; ----------------------------------------------------------------------------
-
-swapTetriminoType:
-        tax
-        lda     swapTetriminoTypeTable,x
-        ; replaced code
-        tax
-        lda     spawnTable,x
-        ;
         rts
