@@ -44,13 +44,19 @@
 ; SET_BACKGROUND_COLOR_BY_DAS_CHARGE
 ; ----------------------------------------------------------------------------
 
+.segment "LEGALSCREEN_BG"
+        ips_segment     "LEGALSCREEN_BG",legal_screen_nametable,1121 ; $ADB8
+
+; legal_screen_nametable
+        .incbin "build/simpledastrainer_legal.nam.stripe"
+        .byte   $FF
+
 .segment "GAME_BG"
         ips_segment     "GAME_BG",game_nametable,1121 ; $BF3C
 
 ; game_nametable
         .incbin "build/simpledastrainer_game.nam.stripe"
         .byte   $FF
-
 
 .segment "GAME_PALETTE"
         ips_segment     "GAME_PALETTE",game_palette+3,8 ; $ACF6
