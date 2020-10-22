@@ -107,7 +107,7 @@ after_renderDasChargeBgColor:
         ips_segment     "JMP_UPDATE_COLOR_STATS",gameModeState_vblankThenRunState2 ; $9E27
 
 ; replaces "lda #$02; sta gameModeState; jsr noop_disabledVramRowIncr"
-        jsr     calcDasChargeBgColor
+        jmp     calcDasChargeBgColor
 after_calcDasChargeBgColor:
         lda     #$02
         sta     gameModeState
