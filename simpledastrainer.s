@@ -450,52 +450,47 @@ calcDasChargeBgColorAndStats:
         lda     #0
         sta     missedEntryDelayTimer
 @timerEnd:
-        ; select color profile: load offset from dasChargeColorProfile1 in A
+        ; put address of current color profile in generalCounter and color subset in A
         lda     displayNextPiece
-        lda     #0
-        ldy     displayNextPiece
-        beq     @checkIfInEntryDelay
-        lda     #.sizeof(DasChargeColorProfile)
-@checkIfInEntryDelay:
+        lut16   dasChargeColorProfileLUT, generalCounter
+        lda     #DasChargeColorProfile::notInEntryDelay
         ; we are in entry delay if playState is 2 to 8 inclusive
         ldy     playState
         cpy     #2
         bmi     @notInEntryDelay
         cpy     #9
         bpl     @notInEntryDelay
-        ; in entry delay so switch to that color subset by adding to A
-        clc
-        adc     #DASCHARGEVALUECOUNT
+        ; in entry delay so load that color subset to A
+        lda     #DasChargeColorProfile::inEntryDelay
         jmp     @missedEntryDelayButtonNotPressed
 @notInEntryDelay:
         ; check if left or right button was pressed just after entry delay
         ldy     missedEntryDelayButtonPressed
         beq     @missedEntryDelayButtonNotPressed
-        tay
+        tay     ; save A
         lda     heldButtons
         and     #$03
         tax
-        tya
+        tya     ; restore A
         cpx     #0
         bne     @stillHeld
         ldy     #0
         sty     missedEntryDelayButtonPressed
         jmp     @missedEntryDelayButtonNotPressed
 @stillHeld:
-        ; just missed entry delay so switch color subset by adding to A
-        clc
-        adc     #2*DASCHARGEVALUECOUNT
+        ; just missed entry delay so load that color subset to A
+        lda     #DasChargeColorProfile::missedEntryDelay
 @missedEntryDelayButtonNotPressed:
         ; add das charge value to A
         clc
         adc     autorepeatX
         ; load color from selected index
         tay
-        ldx     dasChargeColorProfile1,y
+        lda     (generalCounter),y
+        sta     dasChargeBgColor ; save for renderDasChargeBgColor to read
         ; stats
-        stx     tmp3 ; save X
-        ; statIndexToColor table search begin
-        stx     tmp1 ; color
+        ; statIndexToColor table search, takes color to search for in tmp1
+        sta     tmp1
         lda     displayNextPiece
         lut16   dasChargeColorProfile_statIndexToColorLUT, generalCounter ; put address of current color profile's statIndexToColor table in generalCounter
         ldy     #6
@@ -506,7 +501,7 @@ calcDasChargeBgColorAndStats:
         dey
         bpl     @loop
 @done:
-        ; statIndexToColor table search end
+        ; statIndexToColor table search end, stat index or $ff in y with flags set accordingly
         bmi     @endStats ; color not found
         lda     statsIncremented,y
         bne     @endStats ; don't increase stat again until new piece
@@ -518,9 +513,6 @@ calcDasChargeBgColorAndStats:
         tax
         inc16   statsCounters,x
 @endStats:
-        ldx     tmp3 ; restore X
-@setColor:
-        stx     dasChargeBgColor
         jsr     updateAllStats
         jmp     after_calcDasChargeBgColorAndStats
 
