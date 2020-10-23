@@ -293,39 +293,36 @@ after_checkSkipRenderStats:
 .segment "CODE"
         ips_segment     "CODE",unreferenced_data1,637
 
+DASCHARGEVALUECOUNT = 17
 STATSCOUNT = 7
-DASCHARGECOLORSUBSETSIZE = 17
-DASCHARGECOLORSETSIZE = 3 * DASCHARGECOLORSUBSETSIZE + STATSCOUNT
 
-; each line contains 17 color values, one for each possible value of DAS charge (0-16)
-dasChargeColorSet1:
-        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
-        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $00,$00,$00,$00,$00,$00, $00 ; subset used during entry delay
-        .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
+.struct DasChargeColorProfile
+        notInEntryDelay         .res ::DASCHARGEVALUECOUNT
+        inEntryDelay            .res ::DASCHARGEVALUECOUNT
+        missedEntryDelay        .res ::DASCHARGEVALUECOUNT
+        statIndexToColor        .res ::STATSCOUNT
+.endstruct
+
+dasChargeColorProfile1:
+        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00
+        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $00,$00,$00,$00,$00,$00, $00
+        .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00
         .byte   $ff, $16, $28, $10, $ff, $ff, $ff
-        .assert * - dasChargeColorSet1 = DASCHARGECOLORSETSIZE, error, "Color set has wrong size"
-dasChargeColorSet2:
-        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00 ; subset used while not in entry delay
-        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $1c,$1c,$1c,$1c,$1c,$1c, $19 ; subset used during entry delay
-        .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00 ; subset used if just missed entry delay
+        .assert * - dasChargeColorProfile1 = .sizeof(DasChargeColorProfile), error, "Color profile has wrong size"
+dasChargeColorProfile2:
+        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00
+        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $1c,$1c,$1c,$1c,$1c,$1c, $19
+        .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00
         .byte   $ff, $16, $28, $10, $1c, $19, $00
-        .assert * - dasChargeColorSet2 = DASCHARGECOLORSETSIZE, error, "Color set has wrong size"
+        .assert * - dasChargeColorProfile2 = .sizeof(DasChargeColorProfile), error, "Color profile has wrong size"
 
-dasChargeColor_notInEntryDelayLUT:
-        .addr   dasChargeColorSet1+0*DASCHARGECOLORSUBSETSIZE
-        .addr   dasChargeColorSet2+0*DASCHARGECOLORSUBSETSIZE
+dasChargeColorProfileLUT:
+        .addr   dasChargeColorProfile1
+        .addr   dasChargeColorProfile2
 
-dasChargeColor_inEntryDelayLUT:
-        .addr   dasChargeColorSet1+1*DASCHARGECOLORSUBSETSIZE
-        .addr   dasChargeColorSet2+1*DASCHARGECOLORSUBSETSIZE
-
-dasChargeColor_missedEntryDelayLUT:
-        .addr   dasChargeColorSet1+2*DASCHARGECOLORSUBSETSIZE
-        .addr   dasChargeColorSet2+2*DASCHARGECOLORSUBSETSIZE
-
-dasChargeColor_statIndexToColorLUT:
-        .addr   dasChargeColorSet1+3*DASCHARGECOLORSUBSETSIZE
-        .addr   dasChargeColorSet2+3*DASCHARGECOLORSUBSETSIZE
+dasChargeColorProfile_statIndexToColorLUT:
+        .addr   dasChargeColorProfile1+DasChargeColorProfile::statIndexToColor
+        .addr   dasChargeColorProfile2+DasChargeColorProfile::statIndexToColor
 
 dasChargeBgColor := spawnCount+1 ; $001B
 missedEntryDelayTimer := spawnCount+2 ; $001C
@@ -453,11 +450,12 @@ calcDasChargeBgColorAndStats:
         lda     #0
         sta     missedEntryDelayTimer
 @timerEnd:
-        ; select color set: load offset from dasChargeColorSet1 in A
+        ; select color profile: load offset from dasChargeColorProfile1 in A
+        lda     displayNextPiece
         lda     #0
         ldy     displayNextPiece
         beq     @checkIfInEntryDelay
-        lda     #DASCHARGECOLORSETSIZE
+        lda     #.sizeof(DasChargeColorProfile)
 @checkIfInEntryDelay:
         ; we are in entry delay if playState is 2 to 8 inclusive
         ldy     playState
@@ -467,7 +465,7 @@ calcDasChargeBgColorAndStats:
         bpl     @notInEntryDelay
         ; in entry delay so switch to that color subset by adding to A
         clc
-        adc     #DASCHARGECOLORSUBSETSIZE
+        adc     #DASCHARGEVALUECOUNT
         jmp     @missedEntryDelayButtonNotPressed
 @notInEntryDelay:
         ; check if left or right button was pressed just after entry delay
@@ -486,20 +484,20 @@ calcDasChargeBgColorAndStats:
 @stillHeld:
         ; just missed entry delay so switch color subset by adding to A
         clc
-        adc     #2*DASCHARGECOLORSUBSETSIZE
+        adc     #2*DASCHARGEVALUECOUNT
 @missedEntryDelayButtonNotPressed:
         ; add das charge value to A
         clc
         adc     autorepeatX
         ; load color from selected index
         tay
-        ldx     dasChargeColorSet1,y
+        ldx     dasChargeColorProfile1,y
         ; stats
         stx     tmp3 ; save X
         ; statIndexToColor table search begin
         stx     tmp1 ; color
         lda     displayNextPiece
-        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of current color set's statIndexToColor table in generalCounter
+        lut16   dasChargeColorProfile_statIndexToColorLUT, generalCounter ; put address of current color profile's statIndexToColor table in generalCounter
         ldy     #6
 @loop:
         lda     (generalCounter),y
@@ -595,7 +593,7 @@ updateStat:
 renderPieceStat_mod:
         sta     PPUADDR ; replaced code
         lda     displayNextPiece
-        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of current color set's statIndexToColor table in generalCounter
+        lut16   dasChargeColorProfile_statIndexToColorLUT, generalCounter ; put address of current color profile's statIndexToColor table in generalCounter
         ldy     tmpCurrentPiece ; stat line # (0-6)
         beq     @showStat ; always show the first stat (total piece count)
         lda     (generalCounter),y ; color assigned to stat line Y
@@ -611,7 +609,7 @@ renderPieceStat_mod:
 
 updateStatsPalette:
         lda     displayNextPiece
-        lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of current color set's statIndexToColor table in generalCounter
+        lut16   dasChargeColorProfile_statIndexToColorLUT, generalCounter ; put address of current color profile's statIndexToColor table in generalCounter
         lda     #$3f
         sta     PPUADDR
         lda     #$01
