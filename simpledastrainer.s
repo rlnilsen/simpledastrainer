@@ -496,8 +496,8 @@ calcDasChargeBgColorAndStats:
         ldx     dasChargeColorSet1,y
         ; stats
         stx     tmp3 ; save X
+        ; statIndexToColor table search begin
         stx     tmp1 ; color
-        ;
         lda     displayNextPiece
         lut16   dasChargeColor_statIndexToColorLUT, generalCounter ; put address of current color set's statIndexToColor table in generalCounter
         ldy     #6
@@ -508,6 +508,7 @@ calcDasChargeBgColorAndStats:
         dey
         bpl     @loop
 @done:
+        ; statIndexToColor table search end
         bmi     @endStats ; color not found
         lda     statsIncremented,y
         bne     @endStats ; don't increase stat again until new piece
