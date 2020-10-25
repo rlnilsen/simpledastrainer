@@ -1,9 +1,11 @@
 # Simple DAS Trainer
 
+[![Legal screen](media/simpledastrainer-legal-aspect.png)](media/simpledastrainer-legal-aspect.png)
 [![In-game gray background](media/simpledastrainer-game-gray-aspect.png)](media/simpledastrainer-game-gray-aspect.png)
 [![In-game red background](media/simpledastrainer-game-red-aspect.png)](media/simpledastrainer-game-red-aspect.png)
+[![In-game select pressed](media/simpledastrainer-game-selectpressed-aspect.png)](media/simpledastrainer-game-selectpressed-aspect.png)
 
-The purpose of this modification to NES Tetris is to assist learning the DAS method of playing. An unfavourable DAS charge value (0-9) is visualized by changing the color of the background from dark gray to something else:
+The purpose of this modification to NES Tetris is to assist learning the DAS (Delayed Auto Shift) method of playing. An unfavourable DAS charge value (0-9) is visualized by changing the color of the background from dark gray to something else:
 * During entry delay: red
 * Pressing `left` or `right` just after entry delay: yellow
 * All other times: bright gray
