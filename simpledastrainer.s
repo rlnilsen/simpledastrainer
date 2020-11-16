@@ -215,12 +215,6 @@ after_calcDasChargeBgColorAndStats:
         jmp     renderDasChargeBgColor
 after_renderDasChargeBgColor:
 
-.segment "ALWAYS_DISPLAY_NEXT_PIECE"
-        ips_segment     "ALWAYS_DISPLAY_NEXT_PIECE",stageSpriteForNextPiece ; $8BCE
-
-; replaces "lda displayNextPiece"
-        lda     #0
-
 .segment "JMP_NEW_PIECE_MOD"
         ips_segment     "JMP_NEW_PIECE_MOD",playState_spawnNextTetrimino+83 ; $98E1 / onePlayerPieceSelection
 
@@ -284,10 +278,13 @@ dasChargeColorProfile_statIndexToColorLUT:
         .addr   dasChargeColorProfile2+DasChargeColorProfile::statIndexToColor
 
 dasChargeBgColor := spawnCount+1 ; $001B
+
 missedEntryDelayTimer := spawnCount+2 ; $001C
 missedEntryDelayButtonPressed := spawnCount+3 ; $001D
 
-statsIncremented := spawnCount+4 ; $001E, STATSCOUNT bytes - set to 1 when index associated color detected, to avoid incrementing statsCounters more than once per piece
+colorProfile := spawnCount+4 ; $001E
+
+statsIncremented := spawnCount+5 ; $001F, STATSCOUNT bytes - set to 1 when index associated color detected, to avoid incrementing statsCounters more than once per piece
 statsCounters := $0780 ; STATSCOUNT*2 bytes - counts how many pieces has seen the index associated color
 
 ; called for each new piece
@@ -410,7 +407,7 @@ calcDasChargeBgColorAndStats:
         sta     missedEntryDelayTimer
 @timerEnd:
         ; put address of current color profile in generalCounter and color subset in A
-        lda     displayNextPiece
+        lda     colorProfile
         lut16   dasChargeColorProfileLUT, generalCounter
         lda     #DasChargeColorProfile::notInEntryDelay
         ; we are in entry delay if playState is 2 to 8 inclusive
@@ -450,7 +447,7 @@ calcDasChargeBgColorAndStats:
         ; stats
         ; statIndexToColor table search, takes color to search for in tmp1
         sta     tmp1
-        lda     displayNextPiece
+        lda     colorProfile
         lut16   dasChargeColorProfile_statIndexToColorLUT, generalCounter ; put address of current color profile's statIndexToColor table in generalCounter
         ldy     #6
 @loop:
@@ -543,7 +540,7 @@ updateStat:
 ; @showStat path must not alter X
 renderPieceStat_mod:
         sta     PPUADDR ; replaced code
-        lda     displayNextPiece
+        lda     colorProfile
         lut16   dasChargeColorProfile_statIndexToColorLUT, generalCounter ; put address of current color profile's statIndexToColor table in generalCounter
         ldy     tmpCurrentPiece ; stat line # (0-6)
         beq     @showStat ; always show the first stat (total piece count)
@@ -559,7 +556,7 @@ renderPieceStat_mod:
         jmp     render_mode_play_and_demo+375 ; $9665
 
 updateStatsPalette:
-        lda     displayNextPiece
+        lda     colorProfile
         lut16   dasChargeColorProfile_statIndexToColorLUT, generalCounter ; put address of current color profile's statIndexToColor table in generalCounter
         lda     #$3f
         sta     PPUADDR
