@@ -61,7 +61,7 @@
         jsr     swapTetriminoType
 
 .segment "CODE2"
-        ips_segment     "CODE2",unreferenced_data4,515
+        ips_segment     "CODE2",unreferenced_data4,$515
 
 swapTetriminoTypeTable:
         .byte  0,1,2,3,4,5,6 ; original behaviour
@@ -291,7 +291,7 @@ after_initGameState_mod:
 after_checkSkipRenderStats:
 
 .segment "CODE"
-        ips_segment     "CODE",unreferenced_data1,637
+        ips_segment     "CODE",unreferenced_data1,$637
 
 DASCHARGEVALUECOUNT = 17
 STATSCOUNT = 7
