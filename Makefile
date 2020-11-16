@@ -33,8 +33,8 @@ build/skiprocket.nes: build/tetris.nes
 
 simpledastrainer: build/simpledastrainer.nes
 build/simpledastrainer.o: build/tetris.inc build/simpledastrainer_game.nam.stripe build/simpledastrainer_legal.nam.stripe
-build/simpledastrainer.ips.cfg: build/simpledastrainer.o build/fastlegal.o build/skiprocket.o
-build/simpledastrainer.ips: build/ips.o build/simpledastrainer.o build/fastlegal.o build/skiprocket.o
+build/simpledastrainer.ips.cfg: build/simpledastrainer.o build/swaptetriminotype.o build/fastlegal.o build/skiprocket.o
+build/simpledastrainer.ips: build/ips.o build/simpledastrainer.o build/swaptetriminotype.o build/fastlegal.o build/skiprocket.o
 build/simpledastrainer.nes: build/tetris.nes
 
 playerid: build/playerid.nes
