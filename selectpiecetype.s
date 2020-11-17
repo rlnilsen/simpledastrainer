@@ -49,6 +49,10 @@ after_selectPressed:
 .popseg
 
 selectPressed:
+        ; delay piece drop to allow user to focus on piece selection
+        lda     #<-128+48 ; smallest negative value + slowest dropSpeed
+        sta     player1_fallTimer
+        ;
         ldx     pieceType
         inx
         cpx     #8
