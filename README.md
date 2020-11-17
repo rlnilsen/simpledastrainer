@@ -1,4 +1,4 @@
-# Simple DAS Trainer
+# Simple DAS Trainer v1.3
 
 [![Legal screen](media/simpledastrainer-legal-aspect.png)](media/simpledastrainer-legal-aspect.png)
 [![In-game gray background](media/simpledastrainer-game-gray-aspect.png)](media/simpledastrainer-game-gray-aspect.png)
