@@ -1,7 +1,7 @@
-all: tetris taus screens custom handicap twoplayer playerid simpledastrainer build/game_palette.pal build/menu_palette.pal build/game_nametable.nam build/level_menu_nametable.nam
+all: tetris taus screens custom handicap twoplayer playerid simpledastrainer selectpiecetype build/game_palette.pal build/menu_palette.pal build/game_nametable.nam build/level_menu_nametable.nam
 test: build/tetris-test build/taus-test.test build/chart-test.test build/twoplayer-test.test
 # These are simply aliases
-.PHONY: all dis tetris taus screens custom handicap twoplayer playerid simpledastrainer
+.PHONY: all dis tetris taus screens custom handicap twoplayer playerid simpledastrainer selectpiecetype
 
 dis: build/tetris-PRG.s
 
@@ -31,10 +31,16 @@ build/skiprocket.ips.cfg: build/skiprocket.o
 build/skiprocket.ips: build/skiprocket.o build/ips.o
 build/skiprocket.nes: build/tetris.nes
 
+selectpiecetype: build/selectpiecetype.nes
+build/selectpiecetype.o: build/tetris.inc
+build/selectpiecetype.ips.cfg: build/selectpiecetype.o
+build/selectpiecetype.ips: build/selectpiecetype.o build/ips.o
+build/selectpiecetype.nes: build/tetris.nes
+
 simpledastrainer: build/simpledastrainer.nes
 build/simpledastrainer.o: build/tetris.inc build/simpledastrainer_game.nam.stripe build/simpledastrainer_legal.nam.stripe
-build/simpledastrainer.ips.cfg: build/simpledastrainer.o build/swaptetriminotype.o build/fastlegal.o build/skiprocket.o
-build/simpledastrainer.ips: build/ips.o build/simpledastrainer.o build/swaptetriminotype.o build/fastlegal.o build/skiprocket.o
+build/simpledastrainer.ips.cfg: build/simpledastrainer.o build/selectpiecetype.o build/fastlegal.o build/skiprocket.o
+build/simpledastrainer.ips: build/ips.o build/simpledastrainer.o build/selectpiecetype.o build/fastlegal.o build/skiprocket.o
 build/simpledastrainer.nes: build/tetris.nes
 
 playerid: build/playerid.nes
