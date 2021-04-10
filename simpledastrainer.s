@@ -284,7 +284,7 @@ missedEntryDelayButtonPressed := spawnCount+3 ; $001D
 
 colorProfile := spawnCount+4 ; $001E
 
-statsIncremented := spawnCount+5 ; $001F, STATSCOUNT bytes - set to 1 when index associated color detected, to avoid incrementing statsCounters more than once per piece
+statsIncremented := verticalBlankingInterval - STATSCOUNT ; $002C, STATSCOUNT bytes - set to 1 when index associated color detected, to avoid incrementing statsCounters more than once per piece
 statsCounters := $0780 ; STATSCOUNT*2 bytes - counts how many pieces has seen the index associated color
 
 ; called for each new piece
