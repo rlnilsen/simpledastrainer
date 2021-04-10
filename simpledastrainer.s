@@ -222,6 +222,14 @@ after_renderDasChargeBgColor:
         jmp     spawnNextTetrimino_mod
 after_spawnNextTetrimino_mod:
 
+.segment "TOGGLE_SHOW_DAS_CHARGE_BG_COLOR_WITH_SELECT_BUTTON"
+        ips_segment     "TOGGLE_SHOW_DAS_CHARGE_BG_COLOR_WITH_SELECT_BUTTON",gameModeState_updateCountersAndNonPlayerState+30 ; $88A2
+
+; replaces "lda displayNextPiece; eor #$01; sta displayNextPiece"
+        lda     z:dontShowDasChargeBgColor
+        eor     #$01
+        sta     z:dontShowDasChargeBgColor
+
 .segment "DISABLE_PIECE_STATS"
         ips_segment     "DISABLE_PIECE_STATS",incrementPieceStat ; $9969
 
@@ -283,6 +291,7 @@ missedEntryDelayTimer := spawnCount+2 ; $001C
 missedEntryDelayButtonPressed := spawnCount+3 ; $001D
 
 colorProfile := spawnCount+4 ; $001E
+dontShowDasChargeBgColor := spawnCount+5 ; $001F
 
 statsIncremented := verticalBlankingInterval - STATSCOUNT ; $002C, STATSCOUNT bytes - set to 1 when index associated color detected, to avoid incrementing statsCounters more than once per piece
 statsCounters := $0780 ; STATSCOUNT*2 bytes - counts how many pieces has seen the index associated color
@@ -473,6 +482,8 @@ calcDasChargeBgColorAndStats:
         jmp     after_calcDasChargeBgColorAndStats
 
 renderDasChargeBgColor:
+        lda     dontShowDasChargeBgColor
+        bne     @setColor
         ; only replace bg color if it is gray ($00), not if it is white ($30 meaning a tetris flash is happening)
         cpx     #$00
         bne     @setColor
