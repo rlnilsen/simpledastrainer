@@ -1,7 +1,7 @@
-all: tetris taus screens custom handicap twoplayer playerid simpledastrainer selectpiecetype build/game_palette.pal build/menu_palette.pal build/game_nametable.nam build/level_menu_nametable.nam
+all: tetris taus screens custom handicap twoplayer playerid simpledastrainer selectpiecetype 11hzdas build/game_palette.pal build/menu_palette.pal build/game_nametable.nam build/level_menu_nametable.nam
 test: build/tetris-test build/taus-test.test build/chart-test.test build/twoplayer-test.test
 # These are simply aliases
-.PHONY: all dis tetris taus screens custom handicap twoplayer playerid simpledastrainer selectpiecetype
+.PHONY: all dis tetris taus screens custom handicap twoplayer playerid simpledastrainer selectpiecetype 11hzdas
 
 dis: build/tetris-PRG.s
 
@@ -36,6 +36,12 @@ build/selectpiecetype.o: build/tetris.inc
 build/selectpiecetype.ips.cfg: build/selectpiecetype.o
 build/selectpiecetype.ips: build/selectpiecetype.o build/ips.o
 build/selectpiecetype.nes: build/tetris.nes
+
+11hzdas: build/11hzdas.nes
+build/11hzdas.o: build/tetris.inc
+build/11hzdas.ips.cfg: build/11hzdas.o
+build/11hzdas.ips: build/11hzdas.o build/ips.o
+build/11hzdas.nes: build/tetris.nes
 
 simpledastrainer: build/simpledastrainer.nes
 build/simpledastrainer.o: build/tetris.inc build/simpledastrainer_game.nam.stripe build/simpledastrainer_legal.nam.stripe
