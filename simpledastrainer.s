@@ -195,8 +195,11 @@ multiplyBy100:
 .segment "JMP_RENDER_PIECE_STAT_MOD"
         ips_segment     "JMP_RENDER_PIECE_STAT_MOD",render_mode_play_and_demo+360 ; $9656
 
-; replaces "sta PPUADDR"
+; replaces "sta PPUADDR; lda statsByType+1,x; sta PPUDATA; lda statsByType,x"
         jmp     renderPieceStat_mod
+        lda     statsByColor+1,x
+        sta     PPUDATA
+        lda     statsByColor,x
 
 .segment "JMP_CALC_DAS_CHARGE_BG_COLOR_AND_STATS"
         ips_segment     "JMP_CALC_DAS_CHARGE_BG_COLOR_AND_STATS",gameModeState_vblankThenRunState2 ; $9E27
@@ -229,12 +232,6 @@ after_spawnNextTetrimino_mod:
         lda     z:dontShowDasChargeBgColor
         eor     #$01
         sta     z:dontShowDasChargeBgColor
-
-.segment "DISABLE_PIECE_STATS"
-        ips_segment     "DISABLE_PIECE_STATS",incrementPieceStat ; $9969
-
-; replaces "tax"
-       rts
 
 .segment "JMP_INIT_GAME_STATE"
         ips_segment     "JMP_INIT_GAME_STATE",gameModeState_initGameState+21 ; $86F1, after statsByType init so we can overwrite
@@ -295,6 +292,7 @@ dontShowDasChargeBgColor := spawnCount+5 ; $001F
 
 statsIncremented := verticalBlankingInterval - STATSCOUNT ; $002C, STATSCOUNT bytes - set to 1 when index associated color detected, to avoid incrementing statsCounters more than once per piece
 statsCounters := $0780 ; STATSCOUNT*2 bytes - counts how many pieces has seen the index associated color
+statsByColor := $03E0
 
 ; called for each new piece
 resetStatsIncremented:
@@ -517,9 +515,9 @@ updateStat:
         lda     statsCounters+1,x
         jsr     binaryToBcd
         ldx     generalCounter5 ;restore X
-        sta     statsByType,x
+        sta     statsByColor,x
         lda     tmp2
-        sta     statsByType+1,x
+        sta     statsByColor+1,x
         jmp     @done
 @percent:
         ; multiplyBy100
@@ -539,9 +537,9 @@ updateStat:
         lda     result+1
         jsr     binaryToBcd
         ldx     generalCounter5 ;restore X
-        sta     statsByType,x
+        sta     statsByColor,x
         lda     tmp2
-        sta     statsByType+1,x
+        sta     statsByColor+1,x
 @done:
         lda     outOfDateRenderFlags
         ora     #$40
