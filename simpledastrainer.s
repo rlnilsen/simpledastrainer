@@ -262,10 +262,10 @@ STATSCOUNT = 7
 .endstruct
 
 dasChargeColorProfile1:
-        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00
-        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $00,$00,$00,$00,$00,$00, $00
-        .byte   $28,$28,$28,$28,$28,$28,$28,$28,$28,$28, $00,$00,$00,$00,$00,$00, $00
-        .byte   $ff, $16, $28, $10, $ff, $ff, $ff
+        .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $b8,$80,$80,$80,$80,$a8, $19
+        .byte   $16,$16,$16,$16,$16,$16,$16,$16,$16,$16, $38,$00,$00,$00,$00,$28, $19
+        .byte   $27,$27,$27,$27,$27,$27,$27,$27,$27,$27, $b8,$80,$80,$80,$80,$a8, $19
+        .byte   $ff, $16, $27, $10, $38, $28, $19
         .assert * - dasChargeColorProfile1 = .sizeof(DasChargeColorProfile), error, "Color profile has wrong size"
 dasChargeColorProfile2:
         .byte   $10,$10,$10,$10,$10,$10,$10,$10,$10,$10, $00,$00,$00,$00,$00,$00, $00
@@ -450,9 +450,20 @@ calcDasChargeBgColorAndStats:
         ; load color from selected index
         tay
         lda     (generalCounter),y
+        tay
+        ; check if bg color should be updated only when left and right button is up (based on MSB of color value)
+        bpl     @setBgColor
+        lda     heldButtons
+        and     #$03
+        bne     @skipSetBgColor
+@setBgColor:
+        tya
+        and     #$3f
         sta     dasChargeBgColor ; save for renderDasChargeBgColor to read
+@skipSetBgColor:
         ; stats
         ; statIndexToColor table search, takes color to search for in tmp1
+        lda     dasChargeBgColor
         sta     tmp1
         lda     colorProfile
         lut16   dasChargeColorProfile_statIndexToColorLUT, generalCounter ; put address of current color profile's statIndexToColor table in generalCounter
