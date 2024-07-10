@@ -249,7 +249,7 @@ after_initGameState_mod:
 after_checkSkipRenderStats:
 
 .segment "CODE"
-        ips_segment     "CODE",unreferenced_data1,$637
+        ips_segment     "CODE",unreferenced_data1+$100,$637-$100
 
 DASCHARGEVALUECOUNT = 17
 STATSCOUNT = 7
