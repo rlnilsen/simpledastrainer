@@ -450,18 +450,21 @@ calcDasChargeBgColorAndStats:
         ; load color from selected index
         tay
         lda     (generalCounter),y
-        tay
+        sta     tmp1
         ; check if bg color should be updated only when left and right button is up (based on MSB of color value)
         bpl     @setBgColor
         lda     heldButtons
         and     #$03
         bne     @skipSetBgColor
 @setBgColor:
-        tya
+        lda     tmp1
         and     #$3f
         sta     dasChargeBgColor ; save for renderDasChargeBgColor to read
 @skipSetBgColor:
         ; stats
+        ; check if statistic should be increased (based on bit 6 of color value)
+        bit     tmp1
+        bvc     @endStatsNoUpdate
         ; statIndexToColor table search, takes color to search for in tmp1
         lda     dasChargeBgColor
         sta     tmp1
@@ -488,6 +491,7 @@ calcDasChargeBgColorAndStats:
         inc16   statsCounters,x
 @endStats:
         jsr     updateAllStats
+@endStatsNoUpdate:
         jmp     after_calcDasChargeBgColorAndStats
 
 renderDasChargeBgColor:
